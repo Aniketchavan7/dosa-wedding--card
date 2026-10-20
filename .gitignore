@@ -1,0 +1,23 @@
+# Archives and tarballs
+*.tar.gz
+*.zip
+
+# Dev tools and local artifacts
+jasmine-invitation/
+node_modules/
+.openai/
+film-studio/
+scripts/
+
+# Preview captures & qa scripts
+qa*.cjs
+qa.cjs
+*.jpg.bak
+motion-fix-verified.jpg
+names-15-november.jpg
+original-photo-live.jpg
+original-photo-preview.jpg
+video-contact-sheet.jpg
+wedding-events-preview.jpg
+*-preview.png
+*-preview.jpg
