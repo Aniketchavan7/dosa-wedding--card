@@ -211,11 +211,12 @@ const chapterObserver = new IntersectionObserver(entries => {
 }, {threshold:[0,.15,.3,.45,.6,.75,.9,1]});
 chapters.forEach(chapter => chapterObserver.observe(chapter));
 const air = document.getElementById('living-air');
-for (let i=0; i<18; i++) {
+// A modest increase; petals stay beneath the invitation reading surfaces.
+for (let i=0; i<24; i++) {
   const petal = document.createElement('i');
   petal.className = 'air-petal';
   const size = i%5===0 ? 20 : 8+(i*7%8);
-  petal.style.cssText = `--x:${(i*61+13)%100}%;--size:${size}px;--blur:${i%5===0?1.5:0}px;--opacity:${i%5===0?.42:.62};--duration:${17+i%7*2}s;--delay:${-(i*3.7)}s;--drift:${i%2?-95:110}px`;
+  petal.style.cssText = `--x:${(i*61+13)%100}%;--size:${size}px;--blur:${i%5===0?1.5:0}px;--opacity:${i%5===0?.38:.56};--duration:${17+i%7*2}s;--delay:${-(i*3.7)}s;--drift:${i%2?-95:110}px`;
   air.append(petal);
 }
 for (let i=0; i<22; i++) {
