@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="140" height="140">
+  <defs>
+    <!-- Metallic Gold Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f9e498" />
+      <stop offset="35%" stop-color="#d4af37" />
+      <stop offset="70%" stop-color="#aa7c11" />
+      <stop offset="100%" stop-color="#f3e5ab" />
+    </linearGradient>
+    <radialGradient id="innerWax" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0f4d2f" />
+      <stop offset="100%" stop-color="#062315" />
+    </radialGradient>
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Outer Organic Wax Rim -->
+  <path filter="url(#dropShadow)" fill="url(#goldGrad)" d="M100,8 C125,6 148,18 166,34 C184,50 194,75 192,100 C190,125 182,150 164,167 C146,184 125,193 100,192 C75,191 52,183 35,165 C18,147 7,125 8,100 C9,75 19,51 36,34 C53,17 75,10 100,8 Z" />
+
+  <!-- Inner Stamped Ring -->
+  <circle cx="100" cy="100" r="74" fill="url(#innerWax)" stroke="url(#goldGrad)" stroke-width="3" />
+  <circle cx="100" cy="100" r="67" fill="none" stroke="url(#goldGrad)" stroke-width="1" stroke-dasharray="4,3" />
+
+  <!-- Decorative Islamic 8-Point Star (Rub el Hizb) Subtle Outline -->
+  <g stroke="url(#goldGrad)" stroke-width="0.8" fill="none" opacity="0.35">
+    <rect x="52" y="52" width="96" height="96" transform="rotate(0 100 100)" />
+    <rect x="52" y="52" width="96" height="96" transform="rotate(45 100 100)" />
+  </g>
+
+  <!-- Monogram: D & S -->
+  
+  
+</svg>

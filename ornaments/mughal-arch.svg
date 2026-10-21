@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 130" fill="none" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="archGold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#aa7c11"/>
+      <stop offset="50%" stop-color="#f9e498"/>
+      <stop offset="100%" stop-color="#aa7c11"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer Arch Spandrel -->
+  <path d="M0,0 L500,0 L500,130 C500,85 450,75 420,55 C390,35 350,45 320,25 C290,10 265,18 250,4 C235,18 210,10 180,25 C150,45 110,35 80,55 C50,75 0,85 0,130 Z" fill="url(#archGold)" opacity="0.18"/>
+  <!-- Crisp Gold Cusped Line -->
+  <path d="M2,128 C10,85 55,75 82,55 C112,35 150,45 180,25 C210,10 235,18 250,4 C265,18 290,10 320,25 C350,45 388,35 418,55 C445,75 490,85 498,128" stroke="url(#archGold)" stroke-width="3" fill="none"/>
+  <!-- Hanging Jhumar / Lantern Motif in Center -->
+  <line x1="250" y1="4" x2="250" y2="34" stroke="url(#archGold)" stroke-width="1.5"/>
+  <polygon points="250,34 242,46 250,58 258,46" fill="url(#archGold)"/>
+  <circle cx="250" cy="64" r="2.5" fill="#f9e498"/>
+</svg>

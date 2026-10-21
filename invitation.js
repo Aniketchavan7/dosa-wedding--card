@@ -22,8 +22,9 @@ let entranceAnimations = [];
 let entranceTimers = [];
 function motionAllowed() { return !userMotionPaused && !prefersStill() && !document.hidden; }
 function refreshFilms() {
-  document.body.classList.toggle('motion-paused', userMotionPaused || prefersStill());
+  document.body.classList.toggle('motion-paused', userMotionPaused || prefersStill() || document.hidden);
   document.body.classList.toggle('experience-motion', manualMotion);
+  document.body.classList.toggle('life-motion', !prefersStill());
   films.forEach(film => {
     film.muted = true;
     if (film.dataset.active === 'true' && motionAllowed() && (film !== heroFilm || heroVisible)) {
@@ -47,16 +48,23 @@ function activateFilms(active) {
   refreshFilms();
 }
 function syncHeroFilm() {
-  if (heroSynced) return;
-  heroSynced = true;
-  try { if (heroFilm.readyState >= 1) heroFilm.currentTime = hallFilm.currentTime; } catch (_) {}
   heroFilm.dataset.active = 'true';
+  if (!heroSynced && heroFilm.readyState >= 1) {
+    try {
+      heroFilm.currentTime = hallFilm.currentTime || 0;
+      heroSynced = true;
+    } catch (_) { /* The poster remains visible until metadata is available. */ }
+  }
   refreshFilms();
 }
+heroFilm.addEventListener('loadedmetadata', () => {
+  if (hasOpened && !heroSynced) syncHeroFilm();
+});
 motionButtons.forEach(button => button.addEventListener('click', event => {
   event.stopPropagation();
   if (prefersStill()) { manualMotion = true; userMotionPaused = false; }
   else userMotionPaused = !userMotionPaused;
+  if (hasOpened && userMotionPaused) document.body.classList.add('welcome-complete');
   refreshFilms();
 }));
 document.addEventListener('visibilitychange', refreshFilms);
@@ -85,6 +93,7 @@ function finishEntrance() {
   entranceRun++;
   cancelEntrance();
   opening.hidden = true;
+  document.getElementById('entrance-skip').hidden = true;
   journey.hidden = true;
   syncHeroFilm();
   activateFilms([heroFilm]);
@@ -92,18 +101,18 @@ function finishEntrance() {
   document.body.classList.add('revealing');
   lockInvitation(false);
   document.getElementById('names').focus({preventScroll:true});
+  const settledRun = entranceRun;
+  entranceTimers.push(setTimeout(() => {
+    if (settledRun === entranceRun) document.body.classList.add('welcome-complete');
+  }, 2200));
 }
-const entranceImages = ['courtyard.jpg', 'wedding-hall.jpg'].map(source => {
-  const image = new Image();
-  image.src = source;
-  return image.decode().catch(() => undefined);
-});
 lockInvitation(true);
 async function revealInvitation() {
   if (hasOpened) return;
   hasOpened = true;
   if (prefersStill()) { manualMotion = true; userMotionPaused = false; refreshFilms(); }
   const run = ++entranceRun;
+  document.getElementById('entrance-skip').hidden = false;
   opening.classList.add('departing');
   opening.inert = true;
   activateFilms([openingFilm]);
@@ -127,7 +136,8 @@ function revealPalace() {
     if (run === entranceRun) finishEntrance();
   }, 1300));
 }
-opening.addEventListener('click', revealInvitation);
+openButton.addEventListener('click', revealInvitation);
+document.getElementById('entrance-skip').addEventListener('click', finishEntrance);
 enterStill.addEventListener('click', event => {
   event.stopPropagation();
   hasOpened = true; manualMotion = false; userMotionPaused = true;
@@ -143,10 +153,11 @@ document.getElementById('replay').addEventListener('click', () => {
   entranceRun++;
   cancelEntrance();
   hasOpened = false;
+  document.getElementById('entrance-skip').hidden = true;
   heroSynced = false;
   if (!player.hidden) toggleMusic(false);
   window.scrollTo({top:0,behavior:'instant'});
-  document.body.classList.remove('revealing','travelling');
+  document.body.classList.remove('revealing','travelling','welcome-complete');
   journey.hidden = true;
   opening.hidden = false;
   opening.inert = false;
@@ -259,3 +270,39 @@ opening.addEventListener('pointerleave', () => {
   opening.style.setProperty('--photo-x','0px');
   opening.style.setProperty('--photo-y','0px');
 });
+
+// Countdown uses the confirmed Nikah time in India, independent of the guest's timezone.
+const nikahTime = Date.parse('2026-11-15T19:00:00+05:30');
+function updateCountdown() {
+  if (document.hidden) return;
+  const remaining = Math.max(0, Math.floor((nikahTime - Date.now()) / 1000));
+  const values = [Math.floor(remaining/86400), Math.floor(remaining/3600)%24, Math.floor(remaining/60)%60, remaining%60];
+  ['days','hours','minutes','seconds'].forEach((unit,index) => {
+    document.getElementById('count-'+unit).textContent = String(values[index]).padStart(2,'0');
+  });
+  if (!remaining) document.querySelector('#countdown>p').textContent = 'Our wedding day is here';
+}
+updateCountdown();
+setInterval(updateCountdown,1000);
+
+// Guest names are displayed as text; each link carries its own invitation name.
+function cleanGuest(value) {
+  return String(value || '').replace(/[\u0000-\u001f\u007f]/g,'').trim().slice(0,80);
+}
+const invitedGuest = cleanGuest(new URLSearchParams(location.search).get('guest'));
+if (invitedGuest) {
+  const greeting = document.getElementById('guest-greeting');
+  greeting.textContent = 'Dear ' + invitedGuest + ',';
+  greeting.hidden = false;
+  document.getElementById('personal-closing').textContent = invitedGuest + ', we would love to celebrate this beautiful beginning with you.';
+  document.getElementById('gift-name').value = invitedGuest;
+}
+// Individual invitations arrive with the guest's scroll, rather than all at once.
+const eventReveal = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    entry.target.classList.add('event-arrived');
+    eventReveal.unobserve(entry.target);
+  });
+}, {threshold:.12});
+document.querySelectorAll('.event').forEach(event => eventReveal.observe(event));
