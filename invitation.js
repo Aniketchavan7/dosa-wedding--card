@@ -20,6 +20,46 @@ let hasOpened = false;
 let entranceRun = 0;
 let entranceAnimations = [];
 let entranceTimers = [];
+
+// Background Wedding Music (Trimmed from 3:10)
+const bgMusic = document.getElementById('bg-music');
+const musicToggle = document.getElementById('music-toggle');
+
+function setMusicState(playing) {
+  if (!bgMusic) return;
+  if (playing) {
+    const playPromise = bgMusic.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        if (musicToggle) {
+          musicToggle.classList.remove('muted');
+          musicToggle.setAttribute('aria-label', 'Pause background music');
+          musicToggle.setAttribute('title', 'Pause background music');
+          const text = musicToggle.querySelector('.music-toggle-text');
+          if (text) text.textContent = 'Music';
+        }
+      }).catch(() => {
+        if (musicToggle) musicToggle.classList.add('muted');
+      });
+    }
+  } else {
+    bgMusic.pause();
+    if (musicToggle) {
+      musicToggle.classList.add('muted');
+      musicToggle.setAttribute('aria-label', 'Play background music');
+      musicToggle.setAttribute('title', 'Play background music');
+      const text = musicToggle.querySelector('.music-toggle-text');
+      if (text) text.textContent = 'Muted';
+    }
+  }
+}
+
+if (musicToggle) {
+  musicToggle.addEventListener('click', () => {
+    if (!bgMusic) return;
+    setMusicState(bgMusic.paused);
+  });
+}
 function motionAllowed() { return !userMotionPaused && !prefersStill() && !document.hidden; }
 function refreshFilms() {
   document.body.classList.toggle('motion-paused', userMotionPaused || prefersStill() || document.hidden);
@@ -100,6 +140,7 @@ function finishEntrance() {
   document.body.classList.remove('travelling');
   document.body.classList.add('revealing');
   lockInvitation(false);
+  setMusicState(true);
   document.getElementById('names').focus({preventScroll:true});
   const settledRun = entranceRun;
   entranceTimers.push(setTimeout(() => {
@@ -110,6 +151,7 @@ lockInvitation(true);
 async function revealInvitation() {
   if (hasOpened) return;
   hasOpened = true;
+  setMusicState(true);
   if (prefersStill()) { manualMotion = true; userMotionPaused = false; refreshFilms(); }
   const run = ++entranceRun;
   document.getElementById('entrance-skip').hidden = false;
@@ -141,6 +183,7 @@ document.getElementById('entrance-skip').addEventListener('click', finishEntranc
 enterStill.addEventListener('click', event => {
   event.stopPropagation();
   hasOpened = true; manualMotion = false; userMotionPaused = true;
+  setMusicState(true);
   refreshFilms(); finishEntrance();
 });
 skipButton.addEventListener('click', finishEntrance);
@@ -155,7 +198,7 @@ document.getElementById('replay').addEventListener('click', () => {
   hasOpened = false;
   document.getElementById('entrance-skip').hidden = true;
   heroSynced = false;
-  if (!player.hidden) toggleMusic(false);
+  if (bgMusic) { bgMusic.currentTime = 0; setMusicState(true); }
   window.scrollTo({top:0,behavior:'instant'});
   document.body.classList.remove('revealing','travelling','welcome-complete');
   journey.hidden = true;
@@ -170,25 +213,17 @@ document.getElementById('replay').addEventListener('click', () => {
 });
 document.getElementById('names').setAttribute('tabindex','-1');
 document.getElementById('print').addEventListener('click', () => window.print());
-const music = document.getElementById('music');
-const player = document.getElementById('player');
-const youtube = document.getElementById('youtube');
-function toggleMusic(show) {
-  player.hidden = !show;
-  music.setAttribute('aria-expanded', String(show));
-  if (show) {
-    youtube.src = 'https://www.youtube.com/embed/DIV_I5V2mS8?rel=0';
-    document.getElementById('close-music').focus();
-  } else {
-    youtube.src = '';
-    music.focus();
-  }
+
+
+if (musicToggle) {
+  musicToggle.addEventListener('click', () => {
+    if (!bgMusic) return;
+    setMusicState(bgMusic.paused);
+  });
 }
-music.addEventListener('click', () => toggleMusic(player.hidden));
-document.getElementById('close-music').addEventListener('click', () => toggleMusic(false));
+
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && (!journey.hidden || (hasOpened && !opening.hidden))) finishEntrance();
-  else if (event.key === 'Escape' && !player.hidden) toggleMusic(false);
 });
 
 // The page stays in one palace; scrolling changes depth and dragging changes the view.
