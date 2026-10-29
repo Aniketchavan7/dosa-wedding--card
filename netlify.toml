@@ -8,8 +8,17 @@
     X-Content-Type-Options = "nosniff"
 
 [[headers]]
+  for = "/*.mp3"
+  [headers.values]
+    Content-Type = "audio/mpeg"
+    Accept-Ranges = "bytes"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
   for = "/films/*"
   [headers.values]
+    Content-Type = "video/mp4"
+    Accept-Ranges = "bytes"
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]

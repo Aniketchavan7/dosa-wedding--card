@@ -24,41 +24,82 @@ let entranceTimers = [];
 // Background Wedding Music (Trimmed from 3:10)
 const bgMusic = document.getElementById('bg-music');
 const musicToggle = document.getElementById('music-toggle');
+let userMutedMusic = false;
+let audioUnlocked = false;
 
-function setMusicState(playing) {
-  if (!bgMusic) return;
-  if (playing) {
+function updateMusicUI(isPlaying) {
+  if (!musicToggle) return;
+  musicToggle.classList.toggle('muted', !isPlaying);
+  const label = isPlaying ? 'Pause background music' : 'Play background music';
+  musicToggle.setAttribute('aria-label', label);
+  musicToggle.setAttribute('title', label);
+  const text = musicToggle.querySelector('.music-toggle-text');
+  if (text) text.textContent = isPlaying ? 'Music' : 'Muted';
+}
+
+function playMusic() {
+  if (!bgMusic || userMutedMusic) return;
+  try {
     const playPromise = bgMusic.play();
     if (playPromise !== undefined) {
       playPromise.then(() => {
-        if (musicToggle) {
-          musicToggle.classList.remove('muted');
-          musicToggle.setAttribute('aria-label', 'Pause background music');
-          musicToggle.setAttribute('title', 'Pause background music');
-          const text = musicToggle.querySelector('.music-toggle-text');
-          if (text) text.textContent = 'Music';
-        }
+        audioUnlocked = true;
+        updateMusicUI(true);
+        detachGestureUnlock();
       }).catch(() => {
-        if (musicToggle) musicToggle.classList.add('muted');
+        updateMusicUI(false);
       });
     }
-  } else {
-    bgMusic.pause();
-    if (musicToggle) {
-      musicToggle.classList.add('muted');
-      musicToggle.setAttribute('aria-label', 'Play background music');
-      musicToggle.setAttribute('title', 'Play background music');
-      const text = musicToggle.querySelector('.music-toggle-text');
-      if (text) text.textContent = 'Muted';
-    }
+  } catch (_) {
+    updateMusicUI(false);
   }
 }
 
+function pauseMusic() {
+  if (!bgMusic) return;
+  try {
+    bgMusic.pause();
+  } catch (_) {}
+  updateMusicUI(false);
+}
+
+function toggleMusic(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (!bgMusic) return;
+  if (bgMusic.paused) {
+    userMutedMusic = false;
+    playMusic();
+  } else {
+    userMutedMusic = true;
+    pauseMusic();
+  }
+}
+
+// User gesture unlock fallback for mobile & strict autoplay policy
+const unlockEvents = ['click', 'touchstart', 'touchend', 'pointerdown', 'keydown'];
+function onUserGestureUnlock() {
+  if (hasOpened && !userMutedMusic && (!bgMusic || bgMusic.paused)) {
+    playMusic();
+  }
+}
+function attachGestureUnlock() {
+  unlockEvents.forEach(evt => window.addEventListener(evt, onUserGestureUnlock, { passive: true }));
+}
+function detachGestureUnlock() {
+  unlockEvents.forEach(evt => window.removeEventListener(evt, onUserGestureUnlock));
+}
+attachGestureUnlock();
+
+// Pre-prime audio loading
+if (bgMusic) {
+  try { bgMusic.load(); } catch (_) {}
+}
+
 if (musicToggle) {
-  musicToggle.addEventListener('click', () => {
-    if (!bgMusic) return;
-    setMusicState(bgMusic.paused);
-  });
+  musicToggle.addEventListener('click', toggleMusic);
 }
 function motionAllowed() { return !userMotionPaused && !prefersStill() && !document.hidden; }
 function refreshFilms() {
@@ -107,7 +148,21 @@ motionButtons.forEach(button => button.addEventListener('click', event => {
   if (hasOpened && userMotionPaused) document.body.classList.add('welcome-complete');
   refreshFilms();
 }));
-document.addEventListener('visibilitychange', refreshFilms);
+document.addEventListener('visibilitychange', () => {
+  refreshFilms();
+  if (!bgMusic) return;
+  if (document.hidden) {
+    if (!bgMusic.paused) {
+      bgMusic.pause();
+      bgMusic.dataset.wasPlaying = 'true';
+    }
+  } else {
+    if (bgMusic.dataset.wasPlaying === 'true' && !userMutedMusic) {
+      bgMusic.dataset.wasPlaying = 'false';
+      playMusic();
+    }
+  }
+});
 const filmObserver = new IntersectionObserver(([entry]) => {
   heroVisible = entry.isIntersecting;
   refreshFilms();
@@ -140,7 +195,7 @@ function finishEntrance() {
   document.body.classList.remove('travelling');
   document.body.classList.add('revealing');
   lockInvitation(false);
-  setMusicState(true);
+  if (!userMutedMusic) playMusic();
   document.getElementById('names').focus({preventScroll:true});
   const settledRun = entranceRun;
   entranceTimers.push(setTimeout(() => {
@@ -148,10 +203,12 @@ function finishEntrance() {
   }, 2200));
 }
 lockInvitation(true);
-async function revealInvitation() {
+function revealInvitation() {
   if (hasOpened) return;
   hasOpened = true;
-  setMusicState(true);
+  document.body.classList.add('opened-invitation');
+  userMutedMusic = false;
+  playMusic();
   if (prefersStill()) { manualMotion = true; userMotionPaused = false; refreshFilms(); }
   const run = ++entranceRun;
   document.getElementById('entrance-skip').hidden = false;
@@ -179,11 +236,17 @@ function revealPalace() {
   }, 1300));
 }
 openButton.addEventListener('click', revealInvitation);
+opening.addEventListener('click', event => {
+  if (event.target.closest('#intro-motion') || event.target.closest('#enter-still')) return;
+  revealInvitation();
+});
 document.getElementById('entrance-skip').addEventListener('click', finishEntrance);
 enterStill.addEventListener('click', event => {
   event.stopPropagation();
   hasOpened = true; manualMotion = false; userMotionPaused = true;
-  setMusicState(true);
+  document.body.classList.add('opened-invitation');
+  userMutedMusic = false;
+  playMusic();
   refreshFilms(); finishEntrance();
 });
 skipButton.addEventListener('click', finishEntrance);
@@ -198,9 +261,13 @@ document.getElementById('replay').addEventListener('click', () => {
   hasOpened = false;
   document.getElementById('entrance-skip').hidden = true;
   heroSynced = false;
-  if (bgMusic) { bgMusic.currentTime = 0; setMusicState(true); }
+  if (bgMusic) {
+    try { bgMusic.currentTime = 0; } catch (_) {}
+    if (!userMutedMusic) playMusic();
+  }
   window.scrollTo({top:0,behavior:'instant'});
-  document.body.classList.remove('revealing','travelling','welcome-complete');
+  document.body.classList.remove('revealing','travelling','welcome-complete','opened-invitation');
+  attachGestureUnlock();
   journey.hidden = true;
   opening.hidden = false;
   opening.inert = false;
@@ -215,12 +282,7 @@ document.getElementById('names').setAttribute('tabindex','-1');
 document.getElementById('print').addEventListener('click', () => window.print());
 
 
-if (musicToggle) {
-  musicToggle.addEventListener('click', () => {
-    if (!bgMusic) return;
-    setMusicState(bgMusic.paused);
-  });
-}
+
 
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && (!journey.hidden || (hasOpened && !opening.hidden))) finishEntrance();
