@@ -344,7 +344,7 @@ header>a{color:#f0d59c}header nav a,header nav button{color:#fff4df}
 .event-schedule .event-haldi{--card:#3c391e;--gold:#f3d58e}
 .event-schedule .event-nikah{--card:#0c3c2c;--gold:#f1d49a}
 .event-schedule .event::after{display:block;inset:10px;border:1px solid #d8ba7977;border-radius:inherit;z-index:2}
-.event-schedule .event-portrait{height:185px;flex-shrink:0;isolation:isolate;overflow:hidden}
+.event-schedule .event-portrait{width:100%;box-sizing:border-box;height:185px;flex-shrink:0;isolation:isolate;overflow:hidden}
 .event-schedule .portrait-nikah::before{inset:0;width:100%;height:100%;background:url('wedding-hall.jpg') center 46%/cover;z-index:0}
 .event-schedule .event-portrait::after{z-index:1;background:linear-gradient(transparent 25%,var(--card))}
 .nikah-photo-caption{display:none}
